@@ -41,7 +41,7 @@ The application will open at `http://localhost:3000`
 
 ## Data Structure
 
-The application reads from `public/data.csv` which contains the following patient data:
+The application reads from `public/newdata.csv` which contains the following patient data (mapped to the UI):
 
 - **Patient Information**: ID, visits, hospital stays
 - **Medical Data**: Diagnoses, medications, procedures
@@ -53,7 +53,7 @@ The application reads from `public/data.csv` which contains the following patien
 - **PatientSelector**: Dropdown for patient selection
 - **PatientDataDisplay**: Organized data presentation
 - **PatientChart**: Interactive doughnut chart visualization
-- **GeminiInsights**: AI-powered health analysis
+- **SimpleInsights**: AI-powered health analysis
 
 ## Technologies Used
 

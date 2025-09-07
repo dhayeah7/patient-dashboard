@@ -27,7 +27,7 @@ const DoctorChatbot = ({ data }) => {
                 }
             ]);
         }
-    }, [data?.Patient_ID]);
+    }, [data]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -72,53 +72,76 @@ const DoctorChatbot = ({ data }) => {
             return "Please select a patient first to get specific information.";
         }
 
-        // Check for fatal/urgent keywords
-        if (input.includes('fatal') || input.includes('deadly') || input.includes('dangerous') || input.includes('critical') || input.includes('urgent')) {
-            const riskLevel = patientData.risk_factor < 0.3 ? 'Low' :
-                patientData.risk_factor < 0.6 ? 'Medium' : 'High';
-            if (riskLevel === 'High') {
-                return `Patient #${patientData.Patient_ID} has HIGH risk (${(patientData.risk_factor * 100).toFixed(1)}%) requiring immediate attention. With ${patientData.number_emergency} emergency visits and ${patientData.num_medications} medications, this patient needs urgent monitoring and intervention.`;
-            } else {
-                return `Patient #${patientData.Patient_ID} has ${riskLevel.toLowerCase()} risk (${(patientData.risk_factor * 100).toFixed(1)}%). While not immediately fatal, ${patientData.number_emergency > 0 ? 'the emergency visits indicate' : 'the medical complexity suggests'} need for careful monitoring.`;
-            }
+        const riskLevel = patientData.risk_factor < 0.3 ? 'Low' :
+            patientData.risk_factor < 0.6 ? 'Medium' : 'High';
+
+        const matches = (patterns) => patterns.some(p => {
+            if (p instanceof RegExp) return p.test(input);
+            return input.includes(p);
+        });
+
+        // Mortality / fatality intent
+        if (matches([/\b(fatal|die|death|deadly|life[- ]?threatening|mortality)\b/, 'critical', 'urgent'])) {
+            return `I can't predict mortality. Patient #${patientData.Patient_ID} currently has ${riskLevel.toLowerCase()} risk at ${(patientData.risk_factor * 100).toFixed(1)}%. ${riskLevel === 'High' ? 'Prioritize close monitoring and timely follow-up.' : 'Continue guideline-based management and monitoring.'} Key context: ${patientData.number_emergency} emergency visit(s), ${patientData.number_inpatient} inpatient stay(s), ${patientData.num_medications} medication changes/meds, average hospital stay ${patientData.time_in_hospital} day(s).`;
         }
 
-        if (input.includes('risk') || input.includes('diabetes')) {
-            const riskLevel = patientData.risk_factor < 0.3 ? 'Low' :
-                patientData.risk_factor < 0.6 ? 'Medium' : 'High';
-            return `Patient #${patientData.Patient_ID} has a ${riskLevel.toLowerCase()} diabetes risk of ${(patientData.risk_factor * 100).toFixed(1)}%. This requires ${riskLevel.toLowerCase()}-priority monitoring. ${patientData.number_emergency > 0 ? `The ${patientData.number_emergency} emergency visit${patientData.number_emergency > 1 ? 's' : ''} indicate${patientData.number_emergency === 1 ? 's' : ''} potential complications.` : ''}`;
+        // Overall status / "how is he doing" intent
+        if (matches(['how is', "how's", 'doing', 'overall', 'summary', 'status', 'condition', 'progress', 'improve', 'better', 'worse', 'how are they', 'how is the patient'])) {
+            const ageText = patientData['age:70+'] ? '70+ years' : 'under 70 years';
+            const medsText = patientData.diabetesMed ? 'on diabetes meds' : 'not on diabetes meds';
+            const followUp = riskLevel === 'High' ? 'close follow-up within 1–2 weeks' : riskLevel === 'Medium' ? 'routine follow-up within 4–6 weeks' : 'continue standard monitoring';
+            return `Patient #${patientData.Patient_ID} is ${riskLevel.toLowerCase()} risk at ${(patientData.risk_factor * 100).toFixed(1)}%. Utilization: inpatient ${patientData.number_inpatient}, emergency ${patientData.number_emergency}, outpatient ${patientData.number_outpatient}; avg stay ${patientData.time_in_hospital} day(s). Age ${ageText}, ${medsText}. Plan: ${followUp}.`;
         }
 
-        if (input.includes('visit') || input.includes('hospital')) {
-            return `Patient #${patientData.Patient_ID} has ${patientData.total_visits} total visits: ${patientData.number_inpatient} inpatient, ${patientData.number_emergency} emergency, ${patientData.number_outpatient} outpatient. Average hospital stay: ${patientData.time_in_hospital} days. ${patientData.number_emergency > 0 ? 'Emergency visits suggest need for better preventive care.' : 'Low emergency visits indicate good management.'}`;
+        // Risk questions
+        if (matches(['risk', 'probability', 'chance', 'likelihood', 'diabetes'])) {
+            return `Patient #${patientData.Patient_ID} has a ${riskLevel.toLowerCase()} risk of ${(patientData.risk_factor * 100).toFixed(1)}%. ${patientData.number_emergency > 0 ? `Emergency visits (${patientData.number_emergency}) suggest potential instability.` : 'No recent emergency use suggests stable outpatient control.'}`;
         }
 
-        if (input.includes('medication') || input.includes('drug')) {
-            return `Patient #${patientData.Patient_ID} is on ${patientData.num_medications} medications. ${patientData.diabetesMed ? 'Currently taking diabetes medication.' : 'Not currently on diabetes medication.'} ${patientData.num_medications > 20 ? 'High medication count suggests polypharmacy concerns.' : 'Medication count is manageable.'}`;
+        // Visits / utilization
+        if (matches(['visit', 'visits', 'hospital', 'inpatient', 'emergency', 'outpatient'])) {
+            return `Utilization for #${patientData.Patient_ID}: total ${patientData.total_visits}, inpatient ${patientData.number_inpatient}, emergency ${patientData.number_emergency}, outpatient ${patientData.number_outpatient}. Avg hospital stay ${patientData.time_in_hospital} day(s).`;
         }
 
-        if (input.includes('age') || input.includes('elderly')) {
-            return `Patient #${patientData.Patient_ID} is ${patientData['age:70+'] ? '70+ years old' : 'under 70 years old'}. ${patientData['age:70+'] ? 'Age-specific care protocols recommended due to increased vulnerability.' : 'Standard adult care protocols apply.'}`;
+        // Medications / insulin
+        if (matches(['medication', 'medications', 'drug', 'insulin', 'meds'])) {
+            return `Medication profile for #${patientData.Patient_ID}: ${patientData.num_medications} total changes/meds. ${patientData.diabetesMed ? 'On diabetes meds' : 'Not on diabetes meds'}${patientData['feature_13_insulin_No'] === 1 ? '; insulin currently marked as No' : ''}.`;
         }
 
-        if (input.includes('diagnosis') || input.includes('condition')) {
-            return `Patient #${patientData.Patient_ID} has ${patientData.number_diagnoses} active diagnoses. This indicates complex medical history requiring comprehensive care management. ${patientData.number_diagnoses > 10 ? 'High diagnosis count suggests multiple comorbidities.' : 'Diagnosis count is manageable.'}`;
+        // Age
+        if (matches(['age', 'elderly', 'old'])) {
+            return `Patient #${patientData.Patient_ID} is ${patientData['age:70+'] ? '70+ years' : 'under 70 years'}. Adjust care pathways accordingly.`;
         }
 
-        if (input.includes('recommendation') || input.includes('suggest') || input.includes('advice')) {
-            const riskLevel = patientData.risk_factor < 0.3 ? 'Low' :
-                patientData.risk_factor < 0.6 ? 'Medium' : 'High';
-            return `For Patient #${patientData.Patient_ID}: ${riskLevel} priority monitoring, ${patientData.number_emergency > 0 ? 'review emergency patterns, ' : ''}${patientData.num_medications > 20 ? 'medication review, ' : ''}${patientData.diabetesMed ? 'continue diabetes management' : 'consider diabetes evaluation'}. ${patientData['age:70+'] ? 'Age-specific protocols recommended.' : ''}`;
+        // Diagnoses
+        if (matches(['diagnosis', 'diagnoses', 'condition'])) {
+            return `#${patientData.Patient_ID} has ${patientData.number_diagnoses} documented diagnoses. Consider comorbidity management and care coordination.`;
         }
 
-        if (input.includes('hello') || input.includes('hi') || input.includes('help')) {
-            return `Hello! I can help you analyze Patient #${patientData.Patient_ID}. Ask about risk factors, visits, medications, age considerations, diagnoses, or recommendations.`;
+        // Recommendations
+        if (matches(['recommendation', 'recommend', 'suggest', 'advice', 'plan'])) {
+            const actions = [];
+            if (riskLevel === 'High') actions.push('close follow-up within 1–2 weeks');
+            if (patientData.number_emergency > 0) actions.push('review emergency triggers and access plan');
+            if (patientData.num_medications > 20) actions.push('pharmacist-led medication review');
+            if (patientData.diabetesMed) actions.push('optimize diabetes regimen and self-monitoring');
+            if (actions.length === 0) actions.push('continue routine monitoring and lifestyle counseling');
+            return `For Patient #${patientData.Patient_ID} (${riskLevel} risk): ${actions.join('; ')}.`;
         }
 
-        return `I can help you analyze Patient #${patientData.Patient_ID}. Try asking about risk factors, hospital visits, medications, age considerations, diagnoses, or care recommendations.`;
+        // Greetings / help
+        if (matches(['hello', 'hi', 'help', 'hey'])) {
+            return `Hello! Ask about risk, hospital use, medications, age, diagnoses, or recommendations for Patient #${patientData.Patient_ID}.`;
+        }
+
+        // Default: provide a concise status summary
+        const ageText = patientData['age:70+'] ? '70+ years' : 'under 70 years';
+        const medsText = patientData.diabetesMed ? 'on diabetes meds' : 'not on diabetes meds';
+        const followUp = riskLevel === 'High' ? 'close follow-up within 1–2 weeks' : riskLevel === 'Medium' ? 'routine follow-up within 4–6 weeks' : 'continue standard monitoring';
+        return `Summary for #${patientData.Patient_ID}: ${riskLevel} risk ${(patientData.risk_factor * 100).toFixed(1)}%; inpatient ${patientData.number_inpatient}, emergency ${patientData.number_emergency}, outpatient ${patientData.number_outpatient}; avg stay ${patientData.time_in_hospital} day(s); age ${ageText}, ${medsText}. Recommended: ${followUp}.`;
     };
 
-    const handleKeyPress = (e) => {
+    const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSendMessage();
@@ -177,7 +200,7 @@ const DoctorChatbot = ({ data }) => {
                     type="text"
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
-                    onKeyPress={handleKeyPress}
+                    onKeyDown={handleKeyDown}
                     placeholder="Ask about the patient's data..."
                     className="input-field"
                 />

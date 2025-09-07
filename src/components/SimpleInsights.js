@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Brain, AlertTriangle, CheckCircle, XCircle, Loader } from 'lucide-react';
+import { Loader } from 'lucide-react';
 import axios from 'axios';
 import './SimpleInsights.css';
 
@@ -16,6 +16,7 @@ const SimpleInsights = ({ data }) => {
         if (data) {
             generateInsights();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data]);
 
     const generateInsights = async () => {
@@ -36,41 +37,51 @@ const SimpleInsights = ({ data }) => {
             console.log('API URL:', GEMINI_API_URL);
 
             const prompt = `
-        Analyze this diabetes patient data and provide a concise, factual medical summary for doctors. Keep it brief and to the point.
+Provide a concise, factual medical brief for the following diabetes patient. Use the sections and formatting exactly as specified.
 
-        PATIENT DATA:
-        Patient ID: ${data.Patient_ID}
-        Risk Factor: ${(data.risk_factor * 100).toFixed(1)}%
-        Total Visits: ${data.total_visits}
-        Inpatient: ${data.number_inpatient}
-        Emergency: ${data.number_emergency}
-        Outpatient: ${data.number_outpatient}
-        Diagnoses: ${data.number_diagnoses}
-        Medications: ${data.num_medications}
-        Hospital Stay: ${data.time_in_hospital} days
-        Age 70+: ${data['age:70+'] ? 'Yes' : 'No'}
-        Diabetes Med: ${data.diabetesMed ? 'Yes' : 'No'}
+PATIENT DATA
+- Patient ID: ${data.Patient_ID}
+- Risk Probability: ${(data.risk_factor * 100).toFixed(1)}%
+- Age 70+: ${data['age:70+'] ? 'Yes' : 'No'}
+- Total Contacts: ${data.total_visits}
+- Inpatient: ${data.number_inpatient} (intensity: ${data.feature_3_inpatient_intensity ?? 0})
+- Emergency: ${data.number_emergency} (ratio to total: ${data.feature_5_emergency_to_total_ratio ?? 0})
+- Outpatient: ${data.number_outpatient}
+- High Utilizer: ${data.feature_6_high_utilizer ? 'Yes' : 'No'}
+- Diagnoses Count: ${data.number_diagnoses}
+- Lab Procedures: ${data.num_lab_procedures}
+- Hospital Stay: ${data.time_in_hospital} days
+- Admission Source (Emergency): ${data['admission_source_id:Emergency'] ? 'Yes' : 'No'}
+- Referral Admission: ${data.feature_14_admission_source_id_Referral ? 'Yes' : 'No'}
+- Diabetes Meds: ${data.diabetesMed ? 'Yes' : 'No'}; Insulin No: ${data.feature_13_insulin_No ? 'Yes' : 'No'}; Insulin Complexity: ${data.feature_17_insulin_complexity ?? 0}
+- A1C High (>=8): ${data.feature_7_A1Cresult__8 ? 'Yes' : 'No'}; Poor Control: ${data.feature_8_diabetes_control_poor ? 'Yes' : 'No'}; Moderate Control: ${data.feature_9_diabetes_control_moderate ? 'Yes' : 'No'}; A1C Missing: ${data.feature_10_A1Cresult_None ? 'Yes' : 'No'}
+- Max Glucose >=300: ${data.feature_15_max_glu_serum__300 ? 'Yes' : 'No'}
+- Medication Changes: ${data.num_medications}
 
-        Provide a brief summary in this format:
+TOP FEATURES (rank:score)
+- ${data.importance_rank_1}:${data.importance_score_1}
+- ${data.importance_rank_2}:${data.importance_score_2}
+- ${data.importance_rank_3}:${data.importance_score_3}
+- ${data.importance_rank_4}:${data.importance_score_4}
+- ${data.importance_rank_5}:${data.importance_score_5}
 
-        PATIENT SUMMARY
-        [One sentence about patient status]
+OUTPUT FORMAT (exact headings)
+PATIENT SUMMARY
+[One sentence: overall status and most important factors]
 
-        RISK FACTORS
-        - [Fact 1]
-        - [Fact 2]
-        - [Fact 3]
+RISK FACTORS
+- [3–5 concise bullet facts grounded in the data]
 
-        RECOMMENDATIONS
-        - [Action 1]
-        - [Action 2]
-        - [Action 3]
+CARE RECOMMENDATIONS
+- [3–5 concise, guideline-aligned actions with rationale]
 
-        PRIORITY
-        [Low/Medium/High priority level]
+MONITORING PLAN
+- [Follow-up cadence and what to track]
 
-        Keep it simple, factual, and under 150 words total. No fancy formatting or emojis.
-      `;
+PRIORITY
+[Low/Medium/High]
+
+Constraints: Keep total under 180 words. No markdown, no emojis, no tables.`;
 
             const response = await axios.post(GEMINI_API_URL, {
                 contents: [{
@@ -162,13 +173,20 @@ Note: This is a fallback analysis. For AI-powered insights, please configure you
                     {insights.split('\n').map((line, index) => {
                         const trimmedLine = line.trim();
 
-                        if (trimmedLine === 'PATIENT SUMMARY' || trimmedLine === 'RISK FACTORS' || trimmedLine === 'RECOMMENDATIONS' || trimmedLine === 'PRIORITY') {
+                        if (
+                            trimmedLine === 'PATIENT SUMMARY' ||
+                            trimmedLine === 'RISK FACTORS' ||
+                            trimmedLine === 'CARE RECOMMENDATIONS' ||
+                            trimmedLine === 'MONITORING PLAN' ||
+                            trimmedLine === 'PRIORITY' ||
+                            trimmedLine === 'RECOMMENDATIONS'
+                        ) {
                             return <h4 key={index} className="insight-heading">{trimmedLine}</h4>;
                         } else if (trimmedLine.startsWith('-')) {
                             const listItem = trimmedLine.replace(/^-\s*/, '');
                             return <div key={index} className="insight-list-item">{listItem}</div>;
                         } else if (trimmedLine === '') {
-                            return <br key={index} />;
+                            return null;
                         } else if (trimmedLine.length > 0) {
                             return <p key={index} className="insight-paragraph">{trimmedLine}</p>;
                         }
