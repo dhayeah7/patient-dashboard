@@ -4,6 +4,7 @@ import PatientSelector from './components/PatientSelector';
 import PatientDataDisplay from './components/PatientDataDisplay';
 import PatientChart from './components/PatientChart';
 import DoctorChatbot from './components/DoctorChatbot';
+import SimpleInsights from './components/SimpleInsights';
 import './App.css';
 
 function App() {
@@ -93,6 +94,7 @@ function App() {
                                             Risk Factor Analysis
                                         </h2>
                                         <PatientChart data={patientData} />
+                                        <SimpleInsights data={patientData} />
                                     </div>
                                 </div>
 
