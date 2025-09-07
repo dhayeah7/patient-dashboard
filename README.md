@@ -4,7 +4,7 @@ A beautiful React-based dashboard for analyzing diabetes patient data with AI-po
 
 ## Features
 
-- 🏥 **Patient Selection**: Dropdown to select from 500+ patients
+- 🏥 **Patient Selection**: Dropdown to select from 10000+ patients
 - 📊 **Data Visualization**: Interactive charts showing medical activity distribution
 - 📋 **Comprehensive Data Display**: Organized patient information with risk assessment
 - 🤖 **AI Insights**: Google Gemini AI-powered analysis and recommendations
