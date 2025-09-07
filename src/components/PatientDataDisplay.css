@@ -1,0 +1,145 @@
+.patient-data-display {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.risk-summary {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.risk-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.risk-icon {
+    width: 2rem;
+    height: 2rem;
+}
+
+.risk-info h3 {
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+}
+
+.risk-level {
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.risk-factor {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.risk-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1rem;
+}
+
+.risk-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.data-sections {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .data-sections {
+        grid-template-columns: 1fr;
+    }
+}
+
+.data-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.section-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.section-header h4 {
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.data-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.data-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.item-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.item-value {
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    min-width: 60px;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .data-sections {
+        grid-template-columns: 1fr;
+    }
+
+    .risk-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+
+    .risk-factor {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+    }
+}
